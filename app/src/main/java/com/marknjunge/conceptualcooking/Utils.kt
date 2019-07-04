@@ -3,7 +3,9 @@ package com.marknjunge.conceptualcooking
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.util.DisplayMetrics
 import android.util.Log
+import android.util.TypedValue
 import androidx.palette.graphics.Palette
 import com.squareup.picasso.Picasso
 import com.squareup.picasso.RequestCreator
@@ -20,6 +22,8 @@ fun Bitmap.generatePalette(onComplete: (palette: Palette?) -> Unit) {
 
 val Palette.Swatch.rgbString: String
     get() = "#${Integer.toHexString(this.rgb)}"
+
+fun Float.toPx(displayMetrics: DisplayMetrics) = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, this, displayMetrics)
 
 fun getBitmapFromAsset(context: Context, filePath: String): Bitmap? {
     val assetManager = context.assets

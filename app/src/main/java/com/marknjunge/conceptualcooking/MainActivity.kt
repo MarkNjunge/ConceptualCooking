@@ -2,19 +2,16 @@ package com.marknjunge.conceptualcooking
 
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
-import android.os.Build
 import android.os.Bundle
-import android.util.Log
 import android.view.View
-import android.view.ViewTreeObserver
 import android.view.WindowManager
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.squareup.picasso.Picasso
 import kotlinx.android.synthetic.main.activity_main.*
-import kotlinx.android.synthetic.main.content_recipe_header.*
-
+import android.view.ViewGroup
+import timber.log.Timber
 
 class MainActivity : AppCompatActivity() {
 
@@ -22,75 +19,83 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        // Remove translucent status bar
         window.setFlags(
             WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
             WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS
         )
 
-        val recipes = listOf(
-            Recipe("grilled.jpg", "Grilled sea bass", "8 min | 3 servings"),
-            Recipe("sous_vide.jpg", "Sous vide sea bass with mash", "8 min | 3 servings"),
-            Recipe("creamed.jpg", "Creamed sea bass", "8 min | 3 servings"),
-
-            Recipe("grilled.jpg", "Grilled sea bass", "8 min | 3 servings"),
-            Recipe("sous_vide.jpg", "Sous vide sea bass with mash", "8 min | 3 servings"),
-            Recipe("creamed.jpg", "Creamed sea bass", "8 min | 3 servings"),
-            Recipe("grilled.jpg", "Grilled sea bass", "8 min | 3 servings"),
-            Recipe("sous_vide.jpg", "Sous vide sea bass with mash", "8 min | 3 servings"),
-            Recipe("creamed.jpg", "Creamed sea bass", "8 min | 3 servings"),
-            Recipe("grilled.jpg", "Grilled sea bass", "8 min | 3 servings"),
-            Recipe("sous_vide.jpg", "Sous vide sea bass with mash", "8 min | 3 servings"),
-            Recipe("creamed.jpg", "Creamed sea bass", "8 min | 3 servings")
-        )
-
+        // Set up list
         rvRecipes.layoutManager = LinearLayoutManager(this, RecyclerView.VERTICAL, false)
-        rvRecipes.adapter = RecipeAdapter(recipes)
+        rvRecipes.adapter = RecipeAdapter(listOfRecipes)
 
+        // Use the dark vibrant color from the image as the placeholder
         val bitmap = getBitmapFromAsset(this, "sea_bass.jpg")!!
         bitmap.generatePalette { palette ->
             val colorDrawable = ColorDrawable(palette!!.getDarkVibrantColor(Color.parseColor("#000000")))
             Picasso.get().loadAsset("sea_bass.jpg").placeholder(colorDrawable).into(imgDish)
         }
 
-        scrollView.viewTreeObserver.addOnScrollChangedListener {
-            viewFakeToolbar.alpha = scrollView.scrollY / 700f
-            if (scrollView.scrollY > 700) {
+        // Get the card's position on the screen
+        // = it's top margin
+        val cardPosPx = (recipesCard.layoutParams as ViewGroup.MarginLayoutParams).topMargin.toFloat()
+        Timber.d("Card Position px: $cardPosPx")
+
+        // Get the position of the top of the fab on the screen
+        // = card's position - half the height of a fab
+        val fabTopPosPx = cardPosPx - (56f / 2).toPx(resources.displayMetrics)
+        Timber.d("fab Position px: $fabTopPosPx")
+
+        val offsetPx = 72f.toPx(resources.displayMetrics)
+        Timber.d("Offset px: $offsetPx")
+
+        mainContent.viewTreeObserver.addOnScrollChangedListener {
+            Timber.d("Scroll position ${mainContent.scrollY}")
+
+            // Increase the visibility of the toolbar background based on the scroll position
+            // Offset so that it is opaque before the card is at the top
+            viewToolbarBackground.alpha = mainContent.scrollY / (cardPosPx - offsetPx)
+
+            // Hide the fab when it's near the "toolbar"
+            // Offset so that it is gone before the fab is at the top
+            if (mainContent.scrollY > (fabTopPosPx - offsetPx)) {
                 floatingActionButton.hide()
             } else {
                 floatingActionButton.show()
             }
-            if (isViewAbove(tvCardTitle, tvTitle)) {
-                tvTitle.text = "Recipes"
+
+            // Change the title of the toolbar when the card is scrolled past
+            if (isViewAbove(tvCardTitle, tvToolbarTitle)) {
+                tvToolbarTitle.text = "Recipes"
             } else {
-                tvTitle.text = "Ingredients"
+                tvToolbarTitle.text = "Ingredients"
             }
-            Log.d("MNK", "${scrollView.scrollY}")
         }
 
-        scrollView.smoothScrollTo(0, 0)
+        // Scroll to the top of the screen
+        mainContent.smoothScrollTo(0, 0)
     }
 
-    data class Recipe(val image: String, val name: String, val description: String)
-
+    /**
+     * Checks if the first view is higher than the second, in terms of the y value.
+     */
     private fun isViewAbove(firstView: View, secondView: View): Boolean {
-        val firstPosition = IntArray(2)
-        val secondPosition = IntArray(2)
+        val firstViewPos = IntArray(2)
+        firstView.getLocationOnScreen(firstViewPos)
 
-        firstView.getLocationOnScreen(firstPosition)
-        secondView.getLocationOnScreen(secondPosition)
+        val secondViewPos = IntArray(2)
+        secondView.getLocationOnScreen(secondViewPos)
 
-        Log.d("MNK", "${firstPosition[1]} ${secondPosition[1]}")
-        Log.d("MNK", "${firstPosition[0]} ${secondPosition[0]}")
-
-        return firstPosition[1] < secondPosition[1]
+        // View1.y < View2.y
+        return firstViewPos[1] < secondViewPos[1]
     }
 
     private fun isViewOverlapping(firstView: View, secondView: View): Boolean {
         val firstPosition = IntArray(2)
-        val secondPosition = IntArray(2)
-
         firstView.measure(View.MeasureSpec.UNSPECIFIED, View.MeasureSpec.UNSPECIFIED)
         firstView.getLocationOnScreen(firstPosition)
+
+        val secondPosition = IntArray(2)
         secondView.measure(View.MeasureSpec.UNSPECIFIED, View.MeasureSpec.UNSPECIFIED)
         secondView.getLocationOnScreen(secondPosition)
 

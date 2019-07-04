@@ -7,7 +7,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.squareup.picasso.Picasso
 import kotlinx.android.synthetic.main.item_recipe.view.*
 
-class RecipeAdapter(private val data: List<MainActivity.Recipe>) : RecyclerView.Adapter<RecipeAdapter.ViewHolder>() {
+class RecipeAdapter(private val data: List<Recipe>) : RecyclerView.Adapter<RecipeAdapter.ViewHolder>() {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         return ViewHolder(
@@ -22,7 +22,7 @@ class RecipeAdapter(private val data: List<MainActivity.Recipe>) : RecyclerView.
     }
 
     class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        fun bind(recipe: MainActivity.Recipe) {
+        fun bind(recipe: Recipe) {
             itemView.run {
                 Picasso.get().loadAsset(recipe.image).into(imgRecipe)
                 tvRecipeName.text = recipe.name
